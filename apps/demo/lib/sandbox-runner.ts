@@ -104,22 +104,44 @@ async function readLogs(
   return { stdout, stderr };
 }
 
+function isSandboxGoneError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /Status code 4(10|04)/.test(msg) || /sandbox.*(expired|gone|not.*found)/i.test(msg);
+}
+
 async function runInSandbox(args: string[]): Promise<RunResult> {
   const start = Date.now();
-  const sb = await getOrCreateSandbox();
-  const cmd = await sb.runCommand({
-    cmd: "node",
-    args: ["packages/cli/dist/bin.js", ...args],
-    detached: false,
-  });
-  const logs = await readLogs(cmd as unknown as { logs: () => AsyncIterable<{ stream: "stdout" | "stderr"; data: string }> });
-  return {
-    mode: "sandbox",
-    exitCode: cmd.exitCode ?? 0,
-    stdout: logs.stdout,
-    stderr: logs.stderr,
-    durationMs: Date.now() - start,
-  };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const sb = await getOrCreateSandbox();
+      const cmd = await sb.runCommand({
+        cmd: "node",
+        args: ["packages/cli/dist/bin.js", ...args],
+        detached: false,
+      });
+      const logs = await readLogs(
+        cmd as unknown as {
+          logs: () => AsyncIterable<{ stream: "stdout" | "stderr"; data: string }>;
+        },
+      );
+      return {
+        mode: "sandbox",
+        exitCode: cmd.exitCode ?? 0,
+        stdout: logs.stdout,
+        stderr: logs.stderr,
+        durationMs: Date.now() - start,
+      };
+    } catch (err) {
+      if (attempt === 0 && isSandboxGoneError(err)) {
+        console.warn("[sandbox] expired/gone, recreating…", err);
+        sandboxPromise = null;
+        sandboxReady = false;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("sandbox: unreachable");
 }
 
 async function runLocal(args: string[]): Promise<RunResult> {

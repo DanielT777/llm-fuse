@@ -13,6 +13,13 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
+const PRIMARY_MODEL = "openai/gpt-oss-120b:free";
+
+const FALLBACK_MODELS = [
+  "z-ai/glm-4.5-air:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+];
+
 export const maxDuration = 300;
 
 const SYSTEM_PROMPT = [
@@ -29,8 +36,7 @@ const SYSTEM_PROMPT = [
   "Be efficient: prefer `tree` over many `ls`, and only `cat` files you actually need.",
 ].join("\n");
 
-const MODEL_ID =
-  process.env.OPENROUTER_MODEL ?? "openai/gpt-oss-120b:free";
+const MODEL_ID = process.env.OPENROUTER_MODEL ?? PRIMARY_MODEL;
 
 export async function POST(req: Request): Promise<Response> {
   const { messages } = (await req.json()) as { messages: UIMessage[] };
@@ -40,7 +46,9 @@ export async function POST(req: Request): Promise<Response> {
   console.log(`[chat:${reqId}] start model=${MODEL_ID} msgs=${modelMessages.length}`);
 
   const result = streamText({
-    model: openrouter(MODEL_ID),
+    model: openrouter(MODEL_ID, {
+      extraBody: { models: [MODEL_ID, ...FALLBACK_MODELS] },
+    }),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
     tools: {
@@ -56,17 +64,29 @@ export async function POST(req: Request): Promise<Response> {
         }),
         execute: async ({ command }) => {
           console.log(`[chat:${reqId}] tool.exec  $ llmfuse ${command}`);
-          const result = await runLlmfuseCommand(command);
-          console.log(
-            `[chat:${reqId}] tool.done  exit=${result.exitCode} mode=${result.mode} ${result.durationMs}ms ${result.stdout.length}B`,
-          );
-          return {
-            mode: result.mode,
-            exitCode: result.exitCode,
-            durationMs: result.durationMs,
-            stdout: result.stdout,
-            stderr: result.stderr || undefined,
-          };
+          try {
+            const result = await runLlmfuseCommand(command);
+            console.log(
+              `[chat:${reqId}] tool.done  exit=${result.exitCode} mode=${result.mode} ${result.durationMs}ms ${result.stdout.length}B`,
+            );
+            return {
+              mode: result.mode,
+              exitCode: result.exitCode,
+              durationMs: result.durationMs,
+              stdout: result.stdout,
+              stderr: result.stderr || undefined,
+            };
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error(`[chat:${reqId}] tool.fail  ${msg}`);
+            return {
+              mode: "sandbox",
+              exitCode: -1,
+              durationMs: 0,
+              stdout: "",
+              stderr: `runtime error: ${msg}`,
+            };
+          }
         },
       }),
     },
