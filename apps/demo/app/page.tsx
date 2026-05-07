@@ -13,9 +13,35 @@ const examples = [
 interface ToolPart {
   type: string;
   toolName?: string;
+  state?:
+    | "input-streaming"
+    | "input-available"
+    | "output-available"
+    | "output-error";
   input?: { command?: string };
-  output?: { stdout?: string; mode?: string; durationMs?: number; exitCode?: number };
+  output?: {
+    stdout?: string;
+    stderr?: string;
+    mode?: string;
+    durationMs?: number;
+    exitCode?: number;
+  };
+  errorText?: string;
 }
+
+const stateLabel: Record<string, string> = {
+  "input-streaming": "drafting command…",
+  "input-available": "executing…",
+  "output-available": "done",
+  "output-error": "error",
+};
+
+const stateColor: Record<string, string> = {
+  "input-streaming": "#999",
+  "input-available": "#e0a000",
+  "output-available": "#4caf50",
+  "output-error": "#f44336",
+};
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -42,10 +68,25 @@ export default function Home() {
           mount: <code>/api</code> · routes declared in
           <code> packages/provider-jsonplaceholder/src/index.ts</code>
         </div>
+        <div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>
+          model: <code>openai/gpt-oss-120b:free</code> via OpenRouter · tool: <code>llmfuse(command)</code>
+        </div>
       </div>
 
       <div className="panel">
-        <div className="panel-title">conversation</div>
+        <div className="panel-title">
+          conversation
+          {status === "submitted" && (
+            <span style={{ marginLeft: 8, fontSize: 11, color: "#e0a000" }}>
+              ● thinking…
+            </span>
+          )}
+          {status === "streaming" && (
+            <span style={{ marginLeft: 8, fontSize: 11, color: "#4caf50" }}>
+              ● streaming…
+            </span>
+          )}
+        </div>
         <div className="messages">
           {messages.length === 0 && (
             <div style={{ color: "#666", fontSize: 12 }}>
@@ -63,19 +104,36 @@ export default function Home() {
                 }
                 const p = part as ToolPart;
                 if (p.type?.startsWith("tool-")) {
-                  const cmd = p.input?.command ?? "...";
+                  const cmd = p.input?.command ?? "…";
                   const out = p.output;
+                  const state = p.state ?? "input-streaming";
                   return (
                     <div key={i} className="tool-call">
-                      <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span className="cmd">$ llmfuse {cmd}</span>
-                        {out?.mode && (
-                          <span style={{ marginLeft: 8, color: "#666" }}>
-                            [{out.mode} · {out.durationMs}ms · exit {out.exitCode}]
-                          </span>
-                        )}
+                        <span
+                          style={{
+                            fontSize: 11,
+                            padding: "2px 6px",
+                            borderRadius: 3,
+                            background: "#1a1a1a",
+                            color: stateColor[state] ?? "#999",
+                            border: `1px solid ${stateColor[state] ?? "#333"}`,
+                          }}
+                        >
+                          {stateLabel[state] ?? state}
+                          {out?.mode && (
+                            <> · {out.mode} · {out.durationMs}ms · exit {out.exitCode}</>
+                          )}
+                        </span>
                       </div>
                       {out?.stdout && <pre>{out.stdout}</pre>}
+                      {out?.stderr && (
+                        <pre style={{ color: "#f44336" }}>{out.stderr}</pre>
+                      )}
+                      {p.errorText && (
+                        <pre style={{ color: "#f44336" }}>{p.errorText}</pre>
+                      )}
                     </div>
                   );
                 }

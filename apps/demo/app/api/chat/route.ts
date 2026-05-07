@@ -5,8 +5,13 @@ import {
   tool,
   type UIMessage,
 } from "ai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { z } from "zod";
 import { runLlmfuseCommand } from "@/lib/sandbox-runner";
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 export const maxDuration = 300;
 
@@ -24,12 +29,18 @@ const SYSTEM_PROMPT = [
   "Be efficient: prefer `tree` over many `ls`, and only `cat` files you actually need.",
 ].join("\n");
 
+const MODEL_ID =
+  process.env.OPENROUTER_MODEL ?? "openai/gpt-oss-120b:free";
+
 export async function POST(req: Request): Promise<Response> {
   const { messages } = (await req.json()) as { messages: UIMessage[] };
   const modelMessages = await convertToModelMessages(messages);
+  const reqId = Math.random().toString(36).slice(2, 8);
+
+  console.log(`[chat:${reqId}] start model=${MODEL_ID} msgs=${modelMessages.length}`);
 
   const result = streamText({
-    model: "anthropic/claude-sonnet-4.6",
+    model: openrouter(MODEL_ID),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
     tools: {
@@ -44,7 +55,11 @@ export async function POST(req: Request): Promise<Response> {
             ),
         }),
         execute: async ({ command }) => {
+          console.log(`[chat:${reqId}] tool.exec  $ llmfuse ${command}`);
           const result = await runLlmfuseCommand(command);
+          console.log(
+            `[chat:${reqId}] tool.done  exit=${result.exitCode} mode=${result.mode} ${result.durationMs}ms ${result.stdout.length}B`,
+          );
           return {
             mode: result.mode,
             exitCode: result.exitCode,
@@ -56,7 +71,26 @@ export async function POST(req: Request): Promise<Response> {
       }),
     },
     stopWhen: stepCountIs(12),
+    onStepFinish: ({ text, toolCalls, finishReason, usage }) => {
+      console.log(
+        `[chat:${reqId}] step.done reason=${finishReason} text=${text.length}B toolCalls=${toolCalls.length} tokens=${usage?.totalTokens ?? "?"}`,
+      );
+    },
+    onFinish: ({ finishReason, usage }) => {
+      console.log(
+        `[chat:${reqId}] finish reason=${finishReason} totalTokens=${usage?.totalTokens ?? "?"}`,
+      );
+    },
+    onError: ({ error }) => {
+      console.error(`[chat:${reqId}] ERROR`, error);
+    },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    sendReasoning: true,
+    onError: (err) => {
+      console.error(`[chat:${reqId}] stream error`, err);
+      return err instanceof Error ? err.message : String(err);
+    },
+  });
 }

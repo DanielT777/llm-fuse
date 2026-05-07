@@ -50,7 +50,17 @@ async function getOrCreateSandbox(): Promise<Sandbox> {
       timeout: 5 * 60_000,
       source: { type: "git", url: gitUrl, revision: gitRev },
       networkPolicy: {
-        allow: ["*.typicode.com", "registry.npmjs.org", "*.npmjs.org"],
+        allow: [
+          "*.typicode.com",
+          "registry.npmjs.org",
+          "*.npmjs.org",
+          "github.com",
+          "*.github.com",
+          "*.githubusercontent.com",
+          "codeload.github.com",
+          "objects.githubusercontent.com",
+          "nodejs.org",
+        ],
       },
     } as Parameters<typeof Sandbox.create>[0]);
     await sb.runCommand({
