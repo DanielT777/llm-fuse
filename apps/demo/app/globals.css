@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    ui-monospace,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+  background: #0a0a0a;
+  color: #e6e6e6;
+}
+
+a {
+  color: #7dd3fc;
+}
+
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+}
+
+h1 {
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px;
+  color: #fafafa;
+}
+
+.tagline {
+  color: #888;
+  margin: 0 0 24px;
+  font-size: 13px;
+}
+
+.panel {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.bubble {
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.bubble-user {
+  background: #1e293b;
+  align-self: flex-end;
+  max-width: 75%;
+}
+
+.bubble-assistant {
+  background: #0c1117;
+  border: 1px solid #1f2933;
+  max-width: 100%;
+}
+
+.tool-call {
+  background: #0d0d0d;
+  border-left: 3px solid #7dd3fc;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.tool-call .cmd {
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.tool-call pre {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  color: #888;
+  max-height: 220px;
+  overflow: auto;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+input[type="text"] {
+  flex: 1;
+  background: #0c0c0c;
+  border: 1px solid #2a2a2a;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #7dd3fc;
+}
+
+button {
+  background: #7dd3fc;
+  color: #042033;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.example {
+  font-size: 11px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #aaa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.example:hover {
+  border-color: #7dd3fc;
+  color: #7dd3fc;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@llm-fuse/fuse",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "llmfuse-probe": "./dist/probe.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/probe.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "probe": "node ./dist/probe.js"
+  },
+  "dependencies": {
+    "@llm-fuse/core": "workspace:*"
+  },
+  "optionalDependencies": {
+    "fuse-native": "^2.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

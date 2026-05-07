@@ -1,0 +1,19 @@
+{
+  "name": "llm-fuse",
+  "version": "0.0.0",
+  "private": true,
+  "description": "POC: portable VFS runtime for LLM agents - validating FUSE + restricted shell on Vercel Sandbox",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/*\" run build",
+    "dev:demo": "pnpm --filter @llm-fuse/demo dev",
+    "cli": "pnpm --filter @llm-fuse/cli run cli",
+    "probe": "pnpm --filter @llm-fuse/fuse run probe",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@llm-fuse/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "llmfuse": "./dist/bin.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "cli": "node ./dist/bin.js"
+  },
+  "dependencies": {
+    "@llm-fuse/core": "workspace:*",
+    "@llm-fuse/provider-jsonplaceholder": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@llm-fuse/fuse": "workspace:*",
+    "fuse-native": "^2.2.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
